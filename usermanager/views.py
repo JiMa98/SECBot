@@ -9,7 +9,7 @@ from django.utils.datetime_safe import date
 from django.views.decorators.csrf import csrf_exempt
 from pytz import UTC
 #from docmanager.models import Doc
-#from .models import User, History, Token
+from .models import User, History, Token
 
 sys.path.append("..")
 
