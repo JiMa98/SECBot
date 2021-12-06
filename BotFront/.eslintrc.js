@@ -52,6 +52,11 @@ module.exports = {
     "prefer-const": ["off"],
     'no-unused-vars':['warn'],
     'no-console': ['off'],
-    'no-alert': ["off"]
+    'no-alert': ["off"],
+    'max-len': ["off"],
+    'arrow-parens': ["off"],
+    'camelcase':["off"],
+    'no-var':["off"],
+    'import/no-mutable-exports':["off"]
   }
 }

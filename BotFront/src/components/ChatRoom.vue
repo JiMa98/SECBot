@@ -1,12 +1,19 @@
 <template>
-  <div class="container">
-    <div class="content">
-      <ChatList v-bind:chatList="chatlist" />
-    </div>
-    <div class="input-area">
-      <textarea name="text" id="textarea"></textarea>
-      <div class="button-area">
-        <button id="send" v-on:click="send">发 送</button>
+  <div id="home">
+    <div class="container">
+      <div class="cheader">
+        <el-page-header @back="goBack"  v-bind:content="ustate.botname">
+        </el-page-header>
+      </div>
+      <el-divider />
+      <div class="content">
+        <ChatList v-bind:chatList="chatlist" />
+      </div>
+      <div class="input-area">
+        <textarea name="text" id="textarea"></textarea>
+        <div class="button-area">
+          <button id="send" v-on:click="send">发 送</button>
+        </div>
       </div>
     </div>
   </div>
@@ -15,40 +22,29 @@
 <script>
 import Avatar from 'vue-avatar';
 import ChatList from '@/components/ChatList';
-import sendMessage from '@/utils/communications';
+import { ustore } from '@/store/UserStateStore';
+import { sendMessage } from '@/utils/communications';
 
 export default {
-  name: 'Home',
+  name: 'ChatRoom',
   data() {
     return {
-      chatlist: [
-        {
-          pk: 0,
-          username: 'server',
-          text: '昨天 12:35',
-          pos: 2
-        },
-        {
-          pk: 1,
-          username: 'server',
-          text: '你已添加了马冀，现在可以开始聊天了。',
-          pos: 2
-        },
-        {
-          pk: 2,
-          username: '李浩',
-          text: '你好',
-          pos: 0
-        },
-        {
-          pk: 3,
-          username: '马冀',
-          text: '你好啊',
-          pos: 1
-        }
-      ],
-      msg: 'Welcome to Your Vue.js App'
+      ustate: ustore.state
     };
+  },
+  props: {
+    chatlist: {
+      type: Array,
+      default: () => [
+        // 格式如下:
+        // {
+        //  pk: 1, 消息序号
+        //  username: '马冀', 用户名
+        //  text: '你好啊', 消息内容
+        //  pos: 1 消息在左侧还是右侧
+        // }
+      ]
+    }
   },
   components: {
     Avatar,
@@ -65,28 +61,29 @@ export default {
       // 发送消息
       let json = {};
       json.text = text;
-      json.username = '李浩';
+      json.username = this.ustate.username;
       json.pos = 0;
       json.pk = this.chatlist.length;
       this.chatlist.push(json);
 
+      // console.log('ChatRoom ustore:', this.ustate);
       // 消息传递给后端
-      sendMessage(text).then(
-        (Response) => {
+      sendMessage(text, this.ustate.botindex).then(
+        Response => {
           if (Response.status === 200 && Response.data.code === 200) {
-            console.log('Get Response', Response.data.text);
+            // console.log('Get Response', Response.data.text);
             let rjson = {};
             rjson.text = Response.data.text;
-            rjson.username = '马冀';
+            rjson.username = this.ustate.botname.slice(8);
             rjson.pos = 1;
             rjson.pk = this.chatlist.length;
             this.chatlist.push(rjson);
-            console.log('chatlist:', this.chatlist);
+            // console.log('chatlist:', this.chatlist);
           } else {
             console.log('Error Response');
           }
         },
-        (error) => {
+        error => {
           console.log('No Response Error!', error);
         }
       );
@@ -96,7 +93,12 @@ export default {
       // TODO: 滚动条还有问题
       let height = document.querySelector('.content').scrollHeight;
       document.querySelector('.content').scrollTop = height * 10;
-      console.log(height);
+      // console.log(height);
+    },
+    goBack: function goBack() {
+      // TODO:将清空数据改为逐个保存
+      this.chatlist = [];
+      this.$emit('back');
     }
   },
   created() {
@@ -133,13 +135,6 @@ a {
   padding: 0;
   margin: 0;
 }
-body {
-  height: 100vh;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .container {
   margin: 0 auto;
   height: 700px;
@@ -151,82 +146,19 @@ body {
   flex-flow: column;
   overflow: hidden;
 }
+.cheader {
+  width: calc(100% - 40px);
+  height: auto;
+  padding: 20px 5px 10px;
+}
 .content {
   width: calc(100% - 40px);
-  padding: 20px;
+  padding: 0px 20px 20px 20px;
   overflow-y: scroll;
   flex: 1;
 }
 .content:hover::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
-}
-.bubble {
-  max-width: 400px;
-  padding: 10px;
-  border-radius: 5px;
-  position: relative;
-  color: #000;
-  word-wrap: break-word;
-  word-break: normal;
-}
-.item-left .bubble {
-  margin-left: 15px;
-  background-color: #fff;
-}
-.item-left .bubble:before {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-left: 10px solid transparent;
-  border-top: 10px solid transparent;
-  border-right: 10px solid #fff;
-  border-bottom: 10px solid transparent;
-  left: -20px;
-}
-.item-right .bubble {
-  margin-right: 15px;
-  background-color: #9eea6a;
-}
-.item-right .bubble:before {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-left: 10px solid #9eea6a;
-  border-top: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-bottom: 10px solid transparent;
-  right: -20px;
-}
-.item {
-  margin-top: 15px;
-  display: flex;
-  width: 100%;
-}
-.item.item-right {
-  justify-content: flex-end;
-}
-.item.item-center {
-  justify-content: center;
-}
-.item.item-center span {
-  font-size: 12px;
-  padding: 2px 4px;
-  color: #fff;
-  background-color: #dadada;
-  border-radius: 3px;
-  -moz-user-select: none; /*火狐*/
-  -webkit-user-select: none; /*webkit浏览器*/
-  -ms-user-select: none; /*IE10*/
-  -khtml-user-select: none; /*早期浏览器*/
-  user-select: none;
-}
-
-.avatar img {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
 }
 .input-area {
   border-top: 0.5px solid #e0e0e0;
@@ -277,5 +209,15 @@ textarea {
   border-radius: 10px;
   background: rgba(0, 0, 0, 0);
   box-shadow: inset006pxrgba(0, 0, 0, 0.5);
+}
+#home {
+  background: url("../assets/background.jpeg");
+  background-size: 100% 100%;
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
